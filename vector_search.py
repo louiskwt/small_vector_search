@@ -1,8 +1,14 @@
 import heapq
 import json
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, TypedDict
 from utils import euclidean_distance, consine_similarity
+
+class QueryResponse(TypedDict):
+    meta_data: str
+    score: float
+    vectors: List[float]
+
 
 class VectorStore():
     """A a small, self-contained Python class that acts as a tiny local vector database."""
@@ -14,7 +20,7 @@ class VectorStore():
         self._load()
 
 
-    def add(self, vectors: list, id=None):
+    def add(self, vectors: list, id=None) -> None:
         data = {
             "vectors": vectors,
             "meta_data": id
@@ -49,7 +55,7 @@ class VectorStore():
         os.replace(tmp_filename, self.filename)
 
 
-    def query(self, vectors, metric="euclidean", top_k=3):
+    def query(self, vectors, metric="euclidean", top_k=3) -> QueryResponse:
         if metric == "euclidean":
             distances = [(euclidean_distance(d["vectors"], vectors), index) for index, d in enumerate(self.vectors)]
             qualified_distances = heapq.nsmallest(top_k, distances, key=lambda d: d[0])
