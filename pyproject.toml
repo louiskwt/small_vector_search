@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "simple-vector-search"
+version = "0.1.0"
+description = "A tiny local vectorstore for small ML/AI projects."
+requires-python = ">=3.10"
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+svs = "simple_vector_search.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["simple_vector_search*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
