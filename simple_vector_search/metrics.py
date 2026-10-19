@@ -17,9 +17,18 @@ def _as_1d(v: ArrayLike) -> np.ndarray:
 def euclidean_distance(a: ArrayLike, b: ArrayLike) -> float:
     """L2 distance: sqrt(sum((a_i - b_i)^2)). Smaller = closer."""
     a_i, b_i = _as_1d(a), _as_1d(b)
+
     if a_i.shape != b_i.shape: raise ValueError("Vectors must have the same shape.")
-    distance = np.sqrt(np.sum((a_i - b_i) ** 2))
-    return distance
+
+    diff = a_i - b_i
+    max_val = np.max(np.abs(diff))
+
+    if max_val == 0.0:
+        return 0.0
+    
+    scaled_diff = diff / max_val
+    distance = max_val * np.sqrt(np.sum(scaled_diff ** 2))
+    return float(distance)
 
 
 def cosine_similarity(a: ArrayLike, b: ArrayLike) -> float:
@@ -38,4 +47,4 @@ def cosine_similarity(a: ArrayLike, b: ArrayLike) -> float:
     scaled_b = b_i / max_b    
 
     denom = np.sqrt(np.sum(scaled_a ** 2)) * np.sqrt(np.sum(scaled_b ** 2))
-    return 0.0 if denom == 0 else float(np.dot(scaled_a, scaled_b) / denom)
+    return float(np.dot(scaled_a, scaled_b) / denom)
