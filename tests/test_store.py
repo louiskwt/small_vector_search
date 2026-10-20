@@ -7,11 +7,14 @@ until you fill in store.py.
 """
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
 
 from simple_vector_search.store import VectorStore
+
+EXAMPLE_STORE = Path(__file__).resolve().parents[1] / "examples" / "store.json"
 
 
 def fake_embed(texts):
@@ -287,6 +290,23 @@ def test_load_failure_leaves_store_unchanged(tmp_path):
     )
     with pytest.raises(ValueError):
         VectorStore(filename=path)
+
+
+def test_example_store_file_is_valid():
+    """The reference file in examples/ must stay loadable and well formed."""
+    s = VectorStore(filename=str(EXAMPLE_STORE))
+
+    assert s._records
+    assert s.dim is not None
+    assert len(s._records) == len(set(s._records))
+
+    for row in s._records.values():
+        assert isinstance(row["id"], str) and row["id"]
+        assert isinstance(row["vector"], list)
+        assert all(isinstance(x, float) for x in row["vector"])
+        assert len(row["vector"]) == s.dim
+        assert row["document"] is None or isinstance(row["document"], str)
+        assert isinstance(row["metadata"], dict)
 
 
 # Further tests to add:
