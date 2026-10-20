@@ -292,6 +292,48 @@ def test_load_failure_leaves_store_unchanged(tmp_path):
         VectorStore(filename=path)
 
 
+def test_get_returns_record(tmp_path):
+    path = _write(
+        tmp_path,
+        [
+            {
+                "id": "cat",
+                "vector": [0.9, 0.1, 0.2],
+                "document": "a cat",
+                "metadata": {"type": "animal"},
+            },
+            {"id": "dog", "vector": [0.8, 0.2, 0.1], "document": "a dog"},
+        ],
+    )
+    s = VectorStore(filename=path)
+
+    row = s.get("cat")
+    assert row is not None
+    assert row["id"] == "cat"
+    assert row["vector"] == pytest.approx([0.9, 0.1, 0.2])
+    assert row["document"] == "a cat"
+    assert row["metadata"] == {"type": "animal"}
+
+    assert s.get("dog")["id"] == "dog"
+
+
+def test_get_applies_defaults(tmp_path):
+    path = _write(tmp_path, [{"id": "cat", "vector": [0.9, 0.1, 0.2]}])
+    row = VectorStore(filename=path).get("cat")
+    assert row["document"] is None
+    assert row["metadata"] == {}
+
+
+def test_get_missing_id_returns_none(tmp_path):
+    path = _write(tmp_path, [{"id": "cat", "vector": [0.9, 0.1, 0.2]}])
+    assert VectorStore(filename=path).get("nope") is None
+
+
+def test_get_on_empty_store_returns_none(tmp_path):
+    s = VectorStore(filename=str(tmp_path / "nope.json"))
+    assert s.get("cat") is None
+
+
 def test_example_store_file_is_valid():
     """The reference file in examples/ must stay loadable and well formed."""
     s = VectorStore(filename=str(EXAMPLE_STORE))
