@@ -1,0 +1,33 @@
+[
+  {
+    "id": "cat",
+    "vector": [0.9, 0.1, 0.2],
+    "document": "a cat sat on the mat",
+    "metadata": {
+      "type": "animal",
+      "tags": ["feline", "pet"],
+      "extra": {
+        "indoor": true
+      }
+    }
+  },
+  {
+    "id": "dog",
+    "vector": [0.8, 0.2, 0.1],
+    "document": "a dog barked loudly",
+    "metadata": {
+      "type": "animal",
+      "tags": ["canine", "pet"]
+    }
+  },
+  {
+    "id": "car",
+    "vector": [0.1, 0.9, 0.3],
+    "document": null,
+    "metadata": {}
+  },
+  {
+    "id": "bike",
+    "vector": [0.2, 0.8, 0.4]
+  }
+]
