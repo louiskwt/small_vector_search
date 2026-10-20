@@ -160,6 +160,135 @@ def test_query_via_text(tmp_path):
     assert hits[0]["id"] == "c"
 
 
+def _write(tmp_path, payload, name="store.json"):
+    path = tmp_path / name
+    path.write_text(json.dumps(payload) if not isinstance(payload, str) else payload)
+    return str(path)
+
+
+def test_load_missing_file_starts_empty(tmp_path):
+    s = VectorStore(filename=str(tmp_path / "nope.json"))
+    assert s._records == {}
+    assert s.dim is None
+
+
+def test_load_reads_records(tmp_path):
+    path = _write(
+        tmp_path,
+        [
+            {
+                "id": "cat",
+                "vector": [0.9, 0.1, 0.2],
+                "document": "a cat",
+                "metadata": {"type": "animal"},
+            }
+        ],
+    )
+    s = VectorStore(filename=path)
+    row = s._records["cat"]
+    assert row["vector"] == pytest.approx([0.9, 0.1, 0.2])
+    assert row["document"] == "a cat"
+    assert row["metadata"] == {"type": "animal"}
+
+
+def test_load_defaults_document_and_metadata(tmp_path):
+    path = _write(tmp_path, [{"id": "cat", "vector": [0.9, 0.1, 0.2]}])
+    row = VectorStore(filename=path)._records["cat"]
+    assert row["document"] is None
+    assert row["metadata"] == {}
+
+
+def test_load_infers_dim_when_none(tmp_path):
+    path = _write(tmp_path, [{"id": "a", "vector": [1.0, 2.0, 3.0, 4.0]}])
+    s = VectorStore(filename=path)
+    assert s.dim == 4
+
+
+def test_load_empty_list_keeps_dim_none(tmp_path):
+    path = _write(tmp_path, [])
+    s = VectorStore(filename=path)
+    assert s._records == {}
+    assert s.dim is None
+
+
+def test_load_corrupt_json_raises(tmp_path):
+    path = _write(tmp_path, "{not json")
+    with pytest.raises(json.JSONDecodeError):
+        VectorStore(filename=path)
+
+
+def test_load_non_list_top_level_raises(tmp_path):
+    path = _write(tmp_path, {"id": "cat", "vector": [1.0]})
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
+def test_load_rejects_mixed_lengths(tmp_path):
+    path = _write(
+        tmp_path,
+        [
+            {"id": "a", "vector": [0.1, 0.2, 0.3]},
+            {"id": "b", "vector": [0.1, 0.2]},
+        ],
+    )
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
+def test_load_rejects_dim_mismatch(tmp_path):
+    path = _write(tmp_path, [{"id": "a", "vector": [0.1, 0.2, 0.3, 0.4]}])
+    with pytest.raises(ValueError):
+        VectorStore(filename=path, dim=3)
+
+
+def test_load_rejects_duplicate_ids(tmp_path):
+    path = _write(
+        tmp_path,
+        [
+            {"id": "a", "vector": [0.1, 0.2, 0.3]},
+            {"id": "a", "vector": [0.4, 0.5, 0.6]},
+        ],
+    )
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
+def test_load_rejects_row_without_id(tmp_path):
+    path = _write(tmp_path, [{"vector": [0.1, 0.2, 0.3]}])
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
+def test_load_rejects_row_without_vector(tmp_path):
+    path = _write(tmp_path, [{"id": "a"}])
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
+def test_load_rejects_nested_vector(tmp_path):
+    path = _write(tmp_path, [{"id": "a", "vector": [[0.1, 0.2], [0.3, 0.4]]}])
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
+def test_load_rejects_old_format(tmp_path):
+    path = _write(tmp_path, [{"vectors": [0.9, 0.1, 0.2], "meta_data": "cat"}])
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
+def test_load_failure_leaves_store_unchanged(tmp_path):
+    path = _write(
+        tmp_path,
+        [
+            {"id": "a", "vector": [0.1, 0.2, 0.3]},
+            {"id": "b", "vector": [0.1, 0.2]},
+        ],
+    )
+    with pytest.raises(ValueError):
+        VectorStore(filename=path)
+
+
 # Further tests to add:
 # - add() without vector or document should raise
 # - add() with document but no embed_fn should raise
